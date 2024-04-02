@@ -63,7 +63,6 @@ const UploadBox = () => {
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const pageCount = pdfDoc.getPageCount();
     const storage = getStorage();
-    var uploadFinished = true;
 
     try {
       if (!pdfBytes) {
@@ -96,8 +95,6 @@ const UploadBox = () => {
         var blob = new Blob([pdfBytes], { type: 'application/pdf' });
         uploadBytes(storageRef, blob).then((snapshot) => {
           console.log('Uploaded a file!');
-          if (index == pageCount - 1)
-            uploadFinished = false;
         });
       });
     } catch (error) {
@@ -107,7 +104,7 @@ const UploadBox = () => {
 
     console.log("file upload finished")
 
-    while (uploadFinished);
+
 
     console.log("file dowload start")
     try {
