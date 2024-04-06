@@ -1,0 +1,15 @@
+{
+    "source_language_code": "ar",
+    "target_language_code": "ko",
+    "document_input_config": {
+      "gcsSource": {
+        "inputUri": "gs://arabictokorean/0_tarikh_almaghrib.pdf"
+      }
+    },
+    "document_output_config": {
+      "gcsDestination": {
+        "outputUriPrefix": "gs://arabictokorean/"
+      }
+    },
+    "isTranslateNativePdfOnly": false
+  }

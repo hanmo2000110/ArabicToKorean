@@ -4,10 +4,6 @@ import './App.css'; // CSS 파일을 import합니다.
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { initializeApp } from "firebase/app";
 import { PDFDocument } from 'pdf-lib';
-const https = require('https');
-const fs = require('fs');
-const jwt = require('jsonwebtoken');
-
 
 const firebaseConfig = {
   apiKey: "AIzaSyDBf1NdgmuGbAojZu6MXUhVccDE1PI_0e8",
@@ -103,65 +99,6 @@ const UploadBox = () => {
     console.log("file upload finished")
   }
 
-  // Google Cloud Console에서 생성한 서비스 계정의 클라이언트 이메일
-  const clientEmail = 'arabictokorean@gmail.com';
-
-  // Google Cloud Console에서 다운로드한 서비스 계정의 비공개 키 파일의 경로
-  const privateKeyFile = 'website/secure/client_secret_591421231546-pj6etp8u4a1ccuja1ltv1fjfflna4ama.apps.googleusercontent.com.json';
-
-  // Google Cloud OAuth 2.0 토큰 엔드포인트
-  const tokenEndpoint = 'https://oauth2.googleapis.com/token';
-
-  // 번역할 문서의 Cloud Storage URI
-  // const documentUri = 'gs://your-bucket-name/your-file.pdf';
-
-  async function getAccessToken() {
-    const privateKey = fs.readFileSync(privateKeyFile, 'utf8');
-    const jwtPayload = {
-      iss: clientEmail,
-      scope: 'https://www.googleapis.com/auth/cloud-platform',
-      aud: tokenEndpoint,
-      exp: Math.floor(Date.now() / 1000) + 3600, // 토큰 만료 시간 (현재 시간 + 1시간)
-    };
-    const signedJwt = jwt.sign(jwtPayload, privateKey, { algorithm: 'RS256' });
-
-    const requestBody = `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${encodeURIComponent(signedJwt)}`;
-
-    const options = {
-      hostname: 'oauth2.googleapis.com',
-      path: '/token',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    };
-
-    return new Promise((resolve, reject) => {
-      const req = https.request(options, (res) => {
-        let data = '';
-
-        res.on('data', (chunk) => {
-          data += chunk;
-        });
-
-        res.on('end', () => {
-          const response = JSON.parse(data);
-          if (response.error) {
-            reject(response.error);
-          } else {
-            resolve(response.access_token);
-          }
-        });
-      });
-
-      req.on('error', (error) => {
-        reject(error);
-      });
-
-      req.write(requestBody);
-      req.end();
-    });
-  }
 
   const translatePDF = async () => {
     const url = 'https://translation.googleapis.com/v3/projects/arabictokorean/locations/us-central1:translateDocument';
@@ -311,26 +248,31 @@ const UploadBox = () => {
   };
 
   return (
-    <label
-      className={`preview${isActive ? ' active' : ''}`}
-      onDragEnter={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragEnd}
-      onDrop={handleDrop}
-    >
-      <input type="file" className="file" onChange={handleUpload} />
-      {uploadedInfo && <FileInfo uploadedInfo={uploadedInfo} />}
-      {!uploadedInfo && (
-        <>
-          <Logo />
-          <p className="preview_msg">클릭하거나 파일을 이 곳에 드래그하세요.</p>
-          <p className="preview_desc">최대 3MB 파일까지 업로드할 수 있습니다.</p>
-        </>
-      )}
-      <button onClick={handleTranslate}>번역하기</button>
-    </label>
-
+    <>
+      <label
+        className={`preview${isActive ? ' active' : ''}`}
+        onDragEnter={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragEnd}
+        onDrop={handleDrop}
+      >
+        <input type="file" className="file" onChange={handleUpload} />
+        {uploadedInfo && <FileInfo uploadedInfo={uploadedInfo} />}
+        {!uploadedInfo && (
+          <>
+            <Logo />
+            <p className="preview_msg">클릭하거나 파일을 이 곳에 드래그하세요.</p>
+            <p className="preview_desc">최대 3MB 파일까지 업로드할 수 있습니다.</p>
+          </>
+        )}
+      </label>
+  
+      <button onClick={handleTranslate}>업로드 하기</button>
+      <button onClick={handleTranslate}>번역 하기</button>
+      <button onClick={handleTranslate}>다운로드 하기</button>
+    </>
   );
+  
 };
 
 function App() {
