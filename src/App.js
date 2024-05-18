@@ -7,11 +7,11 @@ import { PDFDocument } from 'pdf-lib';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDBf1NdgmuGbAojZu6MXUhVccDE1PI_0e8",
-  authDomain: "arabictokorean.firebaseapp.com",
-  projectId: "arabictokorean",
-  storageBucket: "arabictokorean",
-  messagingSenderId: "591421231546",
-  appId: "1:591421231546:web:6b3dec92a2bc1ad082cd83"
+  authDomain: "lang-420412.firebaseapp.com",
+  projectId: "lang-420412",
+  storageBucket: "arabictokorean1",
+  messagingSenderId: "59722107362",
+  appId: "1:59722107362:web:6b3dec92a2bc1ad082cd83"
 };
 
 initializeApp(firebaseConfig);
@@ -95,72 +95,58 @@ const UploadBox = () => {
       console.error('파일 업로드 오류:', error);
       alert('파일 업로드 중 오류가 발생했습니다.');
     }
-
-    console.log("file upload finished")
+    localStorage.setItem('pdfLength', splitPDFs.length);
+    console.log("splitPDFs length : " + splitPDFs.length)
   }
 
 
   const translatePDF = async () => {
-    const url = 'https://translation.googleapis.com/v3/projects/arabictokorean/locations/us-central1:translateDocument';
-    const apiKey = "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";
-
-    // const accessToken = await getAccessToken();
-
-    const requestBody = {
-      source_language_code: 'ar',
-      target_language_code: 'ko',
-      document_input_config: {
-        gcsSource: {
-          inputUri: 'gs://arabictokorean/'
-        }
-      },
-      document_output_config: {
-        gcsDestination: {
-          outputUriPrefix: 'gs://arabictokorean/'
-        }
-      },
-      isTranslateNativePdfOnly: false
-    };
-
-    var files = Array.from({ length: splitPDF.length }, (v, k) => `${k}_translated_${file.name}`);
-
+    var pdfLength = localStorage.getItem('pdfLength');
+    var files = Array.from({ length: pdfLength }, (v, k) => `gs://arabictokorean1/${k}_${file.name}`);
     try {
-      const translationPromises = files.map(async (file) => {
-        try {
-          requestBody.document_output_config = 'gs://arabictokorean/';
-          const response = await fetch(url, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: {
-              'Content-Type': 'application/json',
-              // 'key': `${apiKey}`,
-              'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify(requestBody)
+      console.log("power shell start");
+
+      // 각 URI에 대한 요청 보내기
+      const requests = files.map(async (uri) => {
+          // 서버 URL
+          const serverUrl = 'http://127.0.0.1:5000/update_input_uri';
+
+          // JSON 데이터 생성
+          const requestData = {
+              new_input_uri: uri
+          };
+
+          // HTTP POST 요청 보내기
+          return fetch(serverUrl, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(requestData)
+          })
+          .then(response => response.json())
+          .then(data => {
+              console.log('서버 응답:', data);
+              // 성공적으로 요청을 보낸 후 실행할 코드
+              return data;
+          })
+          .catch(error => {
+              console.error('에러 발생:', error);
+              // 요청 실패 시 실행할 코드
+              throw error;
           });
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          const responseData = await response.json();
-          console.log(responseData);
-          // 번역 작업 성공한 경우 해당 파일명 반환
-          return file;
-        } catch (error) {
-          console.error(`${file} 번역 중 오류 발생:`, error);
-          // 오류 발생한 경우 null 반환
-          return null;
-        }
       });
 
-      // 모든 번역 작업이 완료될 때까지 기다림
-      const translatedFiles = await Promise.all(translationPromises);
-
-      // 번역이 완료된 파일 출력
-      console.log('번역이 완료된 파일:', translatedFiles.filter(file => file !== null));
-
-      // 서버의 응답 데이터 출력
+      // 모든 요청이 완료될 때까지 기다리기
+      Promise.all(requests)
+          .then(responses => {
+              console.log('모든 요청 완료:', responses);
+              // 모든 요청이 성공적으로 완료된 후 실행할 코드
+          })
+          .catch(error => {
+              console.error('하나 이상의 요청 실패:', error);
+              // 하나 이상의 요청이 실패했을 때 실행할 코드
+          });
     } catch (error) {
       console.error('Error:', error);
     }
@@ -172,8 +158,8 @@ const UploadBox = () => {
       const mergedPDFDocument = await PDFDocument.create();
 
       for (let i = 0; i < pageCount / 20; i += 1) {
-        console.log(`${i}_translated_${file.name}`);
-        var storageRef = ref(storage, `${i}_translated_${file.name}`);
+        console.log(`arabictokorean1/arabictokorean1_${i}_${file.name.replace(".pdf","")}_ko_translations.pdf`);
+        var storageRef = ref(storage, `gs://arabictokorean1/arabictokorean1_${i}_${file.name.replace(".pdf","")}_ko_translations.pdf`);
         storageRef = ref(storage, storageRef);
         const url = await getDownloadURL(storageRef);
         const arrayBuffer = await fetch(url).then(response => response.arrayBuffer());
@@ -204,7 +190,7 @@ const UploadBox = () => {
     console.log("다운로드2 완료");
   }
 
-  const handleTranslate = async () => {
+  const handleTranslate = async (mode) => {
     if (!file) {
       alert('파일을 업로드하세요.');
       return;
@@ -215,12 +201,16 @@ const UploadBox = () => {
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const pageCount = pdfDoc.getPageCount();
     const storage = getStorage();
-
-    await splitPDF(pdfBytes, pageCount, pdfDoc, splitPDFs);
-    await uploadPDF(splitPDFs, storage);
-    await translatePDF();
-    await downloadPDF(pageCount, storage);
-
+    if(mode === "upload"){
+      await splitPDF(pdfBytes, pageCount, pdfDoc, splitPDFs);
+      await uploadPDF(splitPDFs, storage);
+    }
+    else if(mode === "translate"){
+      await translatePDF();
+    }
+    else if(mode === "download"){
+      await downloadPDF(pageCount, storage);
+    }
   };
 
 
@@ -267,9 +257,9 @@ const UploadBox = () => {
         )}
       </label>
   
-      <button onClick={handleTranslate}>업로드 하기</button>
-      <button onClick={handleTranslate}>번역 하기</button>
-      <button onClick={handleTranslate}>다운로드 하기</button>
+      <button onClick={() => handleTranslate("upload")}>업로드 하기</button>
+      <button onClick={() => handleTranslate("translate")}>번역 하기</button>
+      <button onClick={() => handleTranslate("download")}>다운로드 하기</button>
     </>
   );
   

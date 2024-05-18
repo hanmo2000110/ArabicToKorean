@@ -13,7 +13,7 @@ $jsonData = '{
     },
     "document_output_config": {
         "gcsDestination": {
-            "outputUriPrefix": "gs://arabictokorean/"
+            "outputUriPrefix": "gs://arabictokorean1/"
         }
     },
     "isTranslateNativePdfOnly": false
@@ -31,7 +31,7 @@ $cred = gcloud auth print-access-token
 # 요청 헤더 설정
 $headers = @{
     "Authorization" = "Bearer $cred"
-    "x-goog-user-project" = "arabictokorean"
+    "x-goog-user-project" = "lang-420412"
 }
 
 # 요청 보내기
@@ -41,7 +41,7 @@ try {
         -Headers $headers `
         -ContentType "application/json; charset=utf-8" `
         -Body ($jsonObject | ConvertTo-Json -Depth 10) `
-        -Uri "https://translation.googleapis.com/v3/projects/arabictokorean/locations/us-central1:translateDocument"
+        -Uri "https://translation.googleapis.com/v3/projects/lang-420412/locations/us-central1:translateDocument"
 
     # 성공적인 응답인 경우
     if ($response.StatusCode -eq 200) {
@@ -51,5 +51,5 @@ try {
     }
 } catch {
     # 오류 발생 시 오류 메시지 출력
-    Write-Output "오류 발생: $_"
+    Write-Output "error : $_"
 }
